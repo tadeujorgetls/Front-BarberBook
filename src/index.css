@@ -1,0 +1,20 @@
+/* Resetzinho gentil + melhora de foco para acessibilidade */
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+:focus-visible {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 2px;
+}
+kbd {
+  background: #eef2ff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+}
