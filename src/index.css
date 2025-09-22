@@ -1,20 +1,71 @@
-/* Resetzinho gentil + melhora de foco para acessibilidade */
-:root { color-scheme: light; }
+:root {
+  --bg: #0F1110;             /* preto/charcoal */
+  --paper: #F8F5EF;          /* ivory */
+  --primary: #0C4010;        /* verde assinatura */
+  --gold: #C6A15B;           /* dourado */
+  --accent: #5A2B2B;         /* vinho */
+  --text: #141613;           /* texto sobre paper */
+  --text-ivory: #F8F5EF;     /* texto sobre fundo escuro */
+  --steel: #2B2F2B;
+  --hover-ivory: #EDE5D4;
+  --radius: 16px;
+
+  /* background padrão do site */
+  --site-bg: url("/src/assets/barber2.png");
+}
+
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
+html { scroll-behavior: smooth; }
+
 body {
   margin: 0;
+  color: var(--text-ivory);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  background:
+    radial-gradient(900px 520px at 50% -160px, rgba(255,255,255,0.06), transparent 65%),
+    linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.10) 45%, rgba(0,0,0,0.10)),
+    var(--site-bg);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
-:focus-visible {
-  outline: 2px solid #0ea5e9;
-  outline-offset: 2px;
+
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+.bg-textured {
+  background:
+    radial-gradient(900px 520px at 50% -160px, rgba(255,255,255,0.06), transparent 65%),
+    linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.10) 45%, rgba(0,0,0,0.10)),
+    var(--site-bg);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
-kbd {
-  background: #eef2ff;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 0 6px;
-  font-size: 0.75rem;
+
+.bg-darkbar {
+  background: linear-gradient(180deg, rgba(15,17,16,0.98), rgba(15,17,16,0.96));
+  color: var(--text-ivory);
+}
+
+.paper-card {
+  background: var(--paper);
+  color: var(--text);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+}
+
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.8;
+}
+
+.card-raise { transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease; }
+.card-raise:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.22);
+  border-color: var(--gold);
 }
