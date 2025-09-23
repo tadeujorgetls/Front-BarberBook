@@ -1,103 +1,118 @@
-import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
-import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
-import { Link as RouterLink, useLocation } from "react-router-dom";
-import logoImg from "../../assets/barberbook-img.jpg";
+import { AppBar, Box, Button, Container, Toolbar, Typography } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
+
+import logo from "../../assets/barberbook-img.jpg";
+
+type NavItem = {
+  id: "inicio" | "servicos" | "profissionais";
+  label: string;
+};
+
+const NAV: NavItem[] = [
+  { id: "inicio", label: "Início" },
+  { id: "servicos", label: "Serviços" },
+  { id: "profissionais", label: "Profissionais" },
+];
 
 export default function Header() {
-  const { hash, pathname } = useLocation();
-  const navActive = (id: string) => hash === id || (id === "#calendario" && (hash === "" || pathname === "/"));
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const NavBtn = ({ href, label }: { href: string; label: string }) => (
-    <Button
-      component="a"
-      href={href}
-      color="inherit"
-      sx={{
-        fontWeight: 700,
-        color: "var(--text-ivory)",
-        position: "relative",
-        "&::after": {
-          content: '""',
-          position: "absolute",
-          left: 12,
-          right: 12,
-          bottom: 6,
-          height: 2,
-          background: navActive(href) ? "var(--gold)" : "transparent",
-          transition: "all .2s ease",
-        },
-        "&:hover::after": { background: "var(--gold)" },
-      }}
-    >
-      {label}
-    </Button>
-  );
+  const goToSection = (id: NavItem["id"]) => {
+    const go = () => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        window.history.replaceState(null, "", `#${id}`);
+      }
+    };
+
+    if (location.pathname !== "/") {
+      navigate("/", { replace: false });
+      setTimeout(go, 50);
+    } else {
+      go();
+    }
+  };
+
+  const isActive = (id: NavItem["id"]) =>
+    (location.hash || "#inicio") === `#${id}`;
 
   return (
     <AppBar
       position="sticky"
       elevation={0}
       sx={{
-        background: "rgba(15,17,16,0.95)",
+        bgcolor: "#0b0f0b",
         borderBottom: "1px solid rgba(198,161,91,0.35)",
-        color: "var(--text-ivory)",
       }}
     >
-      <Toolbar sx={{ minHeight: 64, px: { xs: 2, sm: 3 } }}>
-        <Box
-          component={RouterLink}
-          to="/"
-          sx={{ display: "flex", alignItems: "center", gap: 1, textDecoration: "none", color: "inherit" }}
-          aria-label="Voltar para a página inicial"
-        >
-          <img
-            src={logoImg}
-            alt="Logo BarberBook"
-            style={{
-              width: 36,
-              height: 36,
-              objectFit: "cover",
-              borderRadius: "50%",
-              border: "1px solid var(--gold)",
-              boxShadow: "0 0 0 2px rgba(198,161,91,0.15)",
-            }}
-          />
-          <Typography variant="subtitle1" sx={{ display: { xs: "none", sm: "block" }, fontWeight: 800, letterSpacing: "0.04em" }}>
-            BarberBook
-          </Typography>
-        </Box>
+      <Container>
+        <Toolbar disableGutters sx={{ display: "flex", justifyContent: "space-between" }}>
+          {/* LOGO */}
+          <Button
+            onClick={() => goToSection("inicio")}
+            sx={{ p: 0, minWidth: 0, display: "flex", alignItems: "center", gap: 1.25 }}
+          >
+            <img
+              src={logo}
+              alt="BarberBook"
+              width={28}
+              height={28}
+              style={{ display: "block", borderRadius: "50%" }}
+            />
+            <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--text-ivory)" }}>
+              BARBERBOOK
+            </Typography>
+          </Button>
 
-        <Box sx={{ flexGrow: 1 }} />
+          {/* NAV */}
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {NAV.map((item) => (
+              <Button
+                key={item.id}
+                onClick={() => goToSection(item.id)}
+                sx={{
+                  position: "relative",
+                  mx: 0.75,
+                  px: 0.25,
+                  color: "var(--text-ivory)",
+                  fontWeight: 800,
+                  textTransform: "none",
+                  fontSize: "0.95rem",
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: -2,
+                    height: "1px",
+                    background: "var(--gold)",
+                    opacity: isActive(item.id) ? 1 : 0.5,
+                  },
+                }}
+              >
+                {item.label}
+              </Button>
+            ))}
 
-        <Box sx={{ display: { xs: "none", md: "flex" }, gap: 1 }}>
-          <NavBtn href="#calendario" label="Início" />
-          <NavBtn href="#servicos" label="Serviços" />
-          <NavBtn href="#profissionais" label="Profissionais" />
-          <NavBtn href="#agendamento" label="Agendar" />
-        </Box>
-
-        <Box sx={{ flexGrow: { xs: 0, md: 0 } }} />
-
-        <Button
-          component={RouterLink}
-          to="/cliente"
-          variant="outlined"
-          startIcon={<PersonOutlineRoundedIcon />}
-          aria-label="Ir para a Área do Cliente"
-          sx={{
-            ml: { md: 2 },
-            color: "var(--gold)",
-            borderColor: "var(--gold)",
-            fontWeight: 800,
-            "&:hover": {
-              borderColor: "var(--gold)",
-              background: "rgba(198,161,91,0.12)",
-            },
-          }}
-        >
-          Área do Cliente
-        </Button>
-      </Toolbar>
+            <Button
+              onClick={() => navigate("/cliente")}
+              variant="outlined"
+              sx={{
+                ml: 1.5,
+                fontWeight: 800,
+                color: "var(--gold)",
+                borderColor: "var(--gold)",
+                textTransform: "none",
+                "&:hover": { background: "rgba(198,161,91,0.12)", borderColor: "var(--gold)" },
+              }}
+            >
+              Área do Cliente
+            </Button>
+          </Box>
+        </Toolbar>
+      </Container>
     </AppBar>
   );
 }

@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Button, Card, CardActionArea, CardContent, Container, Typography, CircularProgress, Alert, Avatar } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { Box, Card, CardContent, Container, Typography, CircularProgress, Alert, Avatar } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { useBookingCtx } from "../context/BookingProvider";
 
 type BackendBarber = { id: string; nome: string; telefone?: string | null; fotoUrl?: string | null };
 type Barber = { id: string; name: string; telefone?: string | null; photo?: string | null };
@@ -30,8 +29,6 @@ function Monogram({ name }: { name: string }) {
 }
 
 export default function BarbersSection() {
-  const { setBarber } = useBookingCtx();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,92 +52,43 @@ export default function BarbersSection() {
     return () => ac.abort();
   }, []);
 
-  const handleSelect = useCallback((b: Barber) => {
-    setSelectedId(b.id);
-    setBarber({ id: b.id, name: b.name, photo: b.photo ?? "" });
-  }, [setBarber]);
-
-  const handleProceed = useCallback(() => {
-    document.querySelector("#agendamento")?.scrollIntoView({ behavior: "smooth" });
-  }, []);
-
   const content = useMemo(() => {
     if (loading) return <Box sx={{ display: "grid", placeItems: "center", py: 5 }}><CircularProgress /></Box>;
     if (error) return <Box sx={{ maxWidth: 640, mx: "auto", mb: 2.5 }}><Alert severity="error">{error}</Alert></Box>;
     return (
       <Grid container spacing={{ xs: 2, sm: 2.5 }} aria-label="Lista de barbeiros">
-        {barbers.map((b) => {
-          const isSelected = selectedId === b.id;
-          return (
-            <Grid key={b.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <Card
-                elevation={0}
-                className="paper-card card-raise"
-                sx={{ borderColor: isSelected ? "var(--gold)" : "rgba(198,161,91,0.5)" }}
-              >
-                <CardActionArea component="div" onClick={() => handleSelect(b)}>
-                  <CardContent sx={{ p: 2.25, textAlign: "center" }}>
-                    {b.photo ? (
-                      <img
-                        src={b.photo}
-                        alt={`Retrato de ${b.name}`}
-                        height={220}
-                        style={{ width: "100%", objectFit: "cover", borderRadius: 12, border: "1px solid var(--gold)" }}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <Monogram name={b.name} />
-                    )}
+        {barbers.map((b) => (
+          <Grid key={b.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+            <Card elevation={0} className="paper-card" sx={{ borderColor: "rgba(198,161,91,0.5)" }}>
+              <CardContent sx={{ p: 2.25, textAlign: "center" }}>
+                {b.photo ? (
+                  <img
+                    src={b.photo}
+                    alt={`Retrato de ${b.name}`}
+                    height={220}
+                    style={{ width: "100%", objectFit: "cover", borderRadius: 12, border: "1px solid var(--gold)" }}
+                    loading="lazy"
+                  />
+                ) : (
+                  <Monogram name={b.name} />
+                )}
 
-                    <Typography variant="h6" component="h2" sx={{ fontWeight: 800, mt: 1.1, color: "var(--text)" }}>
-                      {b.name}
-                    </Typography>
+                <Typography variant="h6" component="h2" sx={{ fontWeight: 800, mt: 1.1, color: "var(--text)" }}>
+                  {b.name}
+                </Typography>
 
-                    {b.telefone && (
-                      <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.9, color: "var(--steel)" }}>
-                        {b.telefone}
-                      </Typography>
-                    )}
-
-                    <Box sx={{ mt: 1.5, display: "flex", justifyContent: "space-between" }}>
-                      <Button
-                        variant={isSelected ? "contained" : "outlined"}
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); handleSelect(b); }}
-                        sx={{
-                          fontWeight: 700,
-                          ...(isSelected
-                            ? { bgcolor: "var(--primary)", "&:hover": { bgcolor: "#0a360d" } }
-                            : { color: "var(--gold)", borderColor: "var(--gold)", "&:hover": { background: "rgba(198,161,91,0.12)", borderColor: "var(--gold)" } }),
-                        }}
-                      >
-                        {isSelected ? "Selecionado" : "Selecionar"}
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        disabled={!isSelected}
-                        onClick={(e) => { e.stopPropagation(); handleProceed(); }}
-                        sx={{
-                          fontWeight: 700,
-                          color: "var(--gold)",
-                          borderColor: "var(--gold)",
-                          "&:hover": { background: "rgba(198,161,91,0.12)", borderColor: "var(--gold)" },
-                          opacity: isSelected ? 1 : 0.6,
-                        }}
-                      >
-                        Prosseguir
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            </Grid>
-          );
-        })}
+                {b.telefone && (
+                  <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.9, color: "var(--steel)" }}>
+                    {b.telefone}
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
     );
-  }, [barbers, loading, error, selectedId, handleSelect, handleProceed]);
+  }, [barbers, loading, error]);
 
   return (
     <Box id="profissionais" className="bg-textured" sx={{ py: { xs: 4, md: 5 } }}>

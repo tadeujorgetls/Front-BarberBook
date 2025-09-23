@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Button, Card, CardActionArea, CardContent, Container, Typography, CircularProgress, Alert } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { Box, Card, CardContent, Container, Typography, CircularProgress, Alert } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import ContentCutRoundedIcon from "@mui/icons-material/ContentCutRounded";
-import { useBookingCtx } from "../context/BookingProvider";
 
 type BackendServico = { id: number | string; nome: string; duracao: number; preco: number; };
 type Service = { id: string; name: string; price: string; duration: string; };
@@ -18,8 +17,6 @@ function formatDuration(min: number) {
 }
 
 export default function ServicesSection() {
-  const { setService } = useBookingCtx();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,80 +39,37 @@ export default function ServicesSection() {
     return () => ac.abort();
   }, []);
 
-  const handleSelect = useCallback((svc: Service) => { setSelectedId(svc.id); setService(svc); }, [setService]);
-  const handleProceed = useCallback(() => { document.querySelector("#profissionais")?.scrollIntoView({ behavior: "smooth" }); }, []);
-
   const grid = useMemo(() => {
     if (loading) return <Box sx={{ display: "grid", placeItems: "center", py: 5 }}><CircularProgress /></Box>;
     if (error) return <Box sx={{ maxWidth: 640, mx: "auto", mb: 2.5 }}><Alert severity="error">{error}</Alert></Box>;
     return (
       <Grid container spacing={{ xs: 2, sm: 2.5 }} aria-label="Lista de serviços">
-        {services.map((svc) => {
-          const isSelected = selectedId === svc.id;
-          return (
-            <Grid key={svc.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <Card
-                elevation={0}
-                className="paper-card card-raise"
-                sx={{ borderColor: isSelected ? "var(--gold)" : "rgba(198,161,91,0.5)" }}
-              >
-                <CardActionArea component="div" onClick={() => handleSelect(svc)}>
-                  <CardContent sx={{ p: 2.25 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 0.75 }}>
-                      <ContentCutRoundedIcon aria-hidden sx={{ mr: 1, color: "var(--gold)" }} />
-                      <Typography variant="h6" component="h2" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                        {svc.name}
-                      </Typography>
-                    </Box>
+        {services.map((svc) => (
+          <Grid key={svc.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+            <Card elevation={0} className="paper-card" sx={{ borderColor: "rgba(198,161,91,0.5)" }}>
+              <CardContent sx={{ p: 2.25 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 0.75 }}>
+                  <ContentCutRoundedIcon aria-hidden sx={{ mr: 1, color: "var(--gold)" }} />
+                  <Typography variant="h6" component="h2" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                    {svc.name}
+                  </Typography>
+                </Box>
 
-                    <Typography variant="caption" sx={{ color: "var(--steel)" }}>
-                      Serviço executado com toalha quente e finalização premium.
-                    </Typography>
+                <Typography variant="caption" sx={{ color: "var(--steel)" }}>
+                  Serviço executado com toalha quente e finalização premium.
+                </Typography>
 
-                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
-                      <Typography variant="body1" sx={{ fontWeight: 800 }}>{svc.price}</Typography>
-                      <Typography variant="body2" sx={{ color: "var(--steel)" }}>• {svc.duration}</Typography>
-                    </Box>
-
-                    <Box sx={{ mt: 1.5, display: "flex", justifyContent: "space-between" }}>
-                      <Button
-                        variant={isSelected ? "contained" : "outlined"}
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); handleSelect(svc); }}
-                        sx={{
-                          fontWeight: 700,
-                          ...(isSelected
-                            ? { bgcolor: "var(--primary)", "&:hover": { bgcolor: "#0a360d" } }
-                            : { color: "var(--gold)", borderColor: "var(--gold)", "&:hover": { background: "rgba(198,161,91,0.12)", borderColor: "var(--gold)" } }),
-                        }}
-                      >
-                        {isSelected ? "Selecionado" : "Selecionar"}
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        disabled={!isSelected}
-                        onClick={(e) => { e.stopPropagation(); handleProceed(); }}
-                        sx={{
-                          fontWeight: 700,
-                          color: "var(--gold)",
-                          borderColor: "var(--gold)",
-                          "&:hover": { background: "rgba(198,161,91,0.12)", borderColor: "var(--gold)" },
-                          opacity: isSelected ? 1 : 0.6,
-                        }}
-                      >
-                        Prosseguir
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            </Grid>
-          );
-        })}
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 800 }}>{svc.price}</Typography>
+                  <Typography variant="body2" sx={{ color: "var(--steel)" }}>• {svc.duration}</Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
     );
-  }, [loading, error, services, selectedId, handleSelect, handleProceed]);
+  }, [loading, error, services]);
 
   return (
     <Box id="servicos" className="bg-textured" sx={{ py: { xs: 4, md: 5 } }}>

@@ -55,7 +55,15 @@ async function apiPost<T>(url: string, body: unknown, signal?: AbortSignal): Pro
   return (await res.json()) as T;
 }
 
-export default function BookingSection({ selectedDateIso }: { selectedDateIso: string }) {
+export default function BookingSection({
+  selectedDateIso,
+  embedded = false,
+  onClose,
+}: {
+  selectedDateIso: string;
+  embedded?: boolean;
+  onClose?: () => void; // NOVO: permite fechar (voltar para o calendário) na etapa 0
+}) {
   const { service: svcCtx, barber: brbCtx } = useBookingCtx();
 
   const [activeStep, setActiveStep] = useState<number>(0);
@@ -165,7 +173,9 @@ export default function BookingSection({ selectedDateIso }: { selectedDateIso: s
     try {
       await apiPost(`${API_BASE}/agendamentos`, payload, ac.signal);
       setSnack({ open: true, msg: "Agendamento confirmado! Enviamos um email pra você.", sev: "success" });
-      setTimeout(() => document.querySelector("#calendario")?.scrollIntoView({ behavior: "smooth" }), 500);
+      if (!embedded) {
+        setTimeout(() => document.querySelector("#calendario")?.scrollIntoView({ behavior: "smooth" }), 500);
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       setSnack({
@@ -174,19 +184,44 @@ export default function BookingSection({ selectedDateIso }: { selectedDateIso: s
         sev: "error",
       });
     }
-  }, [canConfirm, payment, selectedBarber, selectedDateIso, selectedService, selectedSlot]);
+  }, [canConfirm, payment, selectedBarber, selectedDateIso, selectedService, selectedSlot, embedded]);
+
+  // ---------- RENDER ----------
+  const Wrapper: React.ElementType = embedded ? Box : Box;
+  const wrapperProps = embedded
+    ? { id: undefined, className: undefined, sx: { py: 0 } }
+    : { id: "agendamento", className: "bg-textured", sx: { py: { xs: 4, md: 5 } } };
+
+  // Botão VOLTAR genérico por etapa
+  const BackBtn = ({ onClick }: { onClick: () => void }) => (
+    <Button
+      startIcon={<ArrowBackRoundedIcon />}
+      onClick={onClick}
+      sx={{
+        fontWeight: 800,
+        color: "var(--primary)",
+        border: "1px solid var(--primary)",
+        px: 2.25,
+      }}
+      variant="outlined"
+    >
+      Voltar
+    </Button>
+  );
 
   return (
-    <Box id="agendamento" className="bg-textured" sx={{ py: { xs: 4, md: 5 } }}>
-      <Container>
-        <Box sx={{ textAlign: "center", mb: { xs: 2.5, md: 3 }, color: "var(--text-ivory)" }}>
-          <Typography component="h2" variant="h3" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
-            Agende Seu Serviço
-          </Typography>
-          <Typography variant="body2">
-            Para o dia <strong>{selectedDateLabel}</strong>
-          </Typography>
-        </Box>
+    <Wrapper {...wrapperProps}>
+      <Container disableGutters={embedded} sx={embedded ? { p: 0 } : undefined}>
+        {!embedded && (
+          <Box sx={{ textAlign: "center", mb: { xs: 2.5, md: 3 }, color: "var(--text-ivory)" }}>
+            <Typography component="h2" variant="h3" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
+              Agende Seu Serviço
+            </Typography>
+            <Typography variant="body2">
+              Para o dia <strong>{dayjs(selectedDateIso).locale("pt-br").format("DD/MM/YYYY")}</strong>
+            </Typography>
+          </Box>
+        )}
 
         <Stepper
           activeStep={activeStep}
@@ -204,35 +239,160 @@ export default function BookingSection({ selectedDateIso }: { selectedDateIso: s
           ))}
         </Stepper>
 
+        {/* ETAPA 0: SERVIÇO */}
         {activeStep === 0 && (
           <Box>
             {loadingServices ? (
               <Box sx={{ display: "grid", placeItems: "center", py: 4 }}><CircularProgress /></Box>
             ) : (
-              <Grid container spacing={{ xs: 2, sm: 2.5 }} aria-label="Lista de serviços">
-                {services.map((svc) => (
-                  <Grid key={svc.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                    <Card elevation={0} className="paper-card card-raise" sx={{ borderColor: "rgba(198,161,91,0.5)" }}>
-                      <CardContent sx={{ p: 2.25 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", mb: 0.75 }}>
-                          <ContentCutRoundedIcon aria-hidden sx={{ mr: 1, color: "var(--gold)" }} />
-                          <Typography variant="h6" component="h3" sx={{ fontWeight: 800 }}>{svc.nome}</Typography>
-                        </Box>
-                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                          <Typography variant="body1" sx={{ fontWeight: 800 }}>R$ {svc.preco.toFixed(2)}</Typography>
-                          <Typography variant="body2" sx={{ color: "var(--steel)" }}>• {svc.duracao} min</Typography>
-                        </Box>
-                        {selectedService?.id === svc.id && <Chip sx={{ mt: 1 }} color="primary" label="Selecionado" size="small" />}
-                        <Box sx={{ mt: 1.5, display: "flex", justifyContent: "flex-end" }}>
-                          <Button variant="contained" size="small" onClick={() => handleSelectService(svc)} sx={{ bgcolor: "var(--primary)", "&:hover": { bgcolor: "#0a360d" }, fontWeight: 700 }}>
-                            Selecionar
-                          </Button>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
+              <>
+                <Grid container spacing={{ xs: 2, sm: 2.5 }} aria-label="Lista de serviços">
+                  {services.map((svc) => (
+                    <Grid key={svc.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                      <Card elevation={0} className="paper-card" sx={{ borderColor: "rgba(198,161,91,0.5)" }}>
+                        <CardContent sx={{ p: 2.25 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", mb: 0.75 }}>
+                            <ContentCutRoundedIcon aria-hidden sx={{ mr: 1, color: "var(--gold)" }} />
+                            <Typography variant="h6" component="h3" sx={{ fontWeight: 800 }}>{svc.nome}</Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                            <Typography variant="body1" sx={{ fontWeight: 800 }}>R$ {svc.preco.toFixed(2)}</Typography>
+                            <Typography variant="body2" sx={{ color: "var(--steel)" }}>• {svc.duracao} min</Typography>
+                          </Box>
+                          <Box sx={{ mt: 1.5, display: "flex", justifyContent: "flex-end" }}>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={() => setSelectedService(svc)}
+                              sx={{ bgcolor: "var(--primary)", "&:hover": { bgcolor: "#0a360d" }, fontWeight: 700 }}
+                            >
+                              Selecionar
+                            </Button>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+
+                {/* Voltar fecha o Booking (retorna ao calendário) */}
+                <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-start" }}>
+                  <BackBtn onClick={() => onClose?.()} />
+                </Box>
+              </>
+            )}
+          </Box>
+        )}
+
+        {/* ETAPA 1: BARBEIRO */}
+        {activeStep === 1 && (
+          <Box>
+            {loadingBarbers ? (
+              <Box sx={{ display: "grid", placeItems: "center", py: 4 }}><CircularProgress /></Box>
+            ) : (
+              <>
+                <Grid container spacing={{ xs: 2, sm: 2.5 }} aria-label="Lista de barbeiros">
+                  {barbers.map((b) => (
+                    <Grid key={b.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                      <Card elevation={0} className="paper-card" sx={{ borderColor: "rgba(198,161,91,0.5)" }}>
+                        <CardContent sx={{ p: 2.25, textAlign: "center" }}>
+                          {b.fotoUrl ? (
+                            <img
+                              src={b.fotoUrl}
+                              alt={`Retrato de ${b.nome}`}
+                              height={220}
+                              style={{ width: "100%", objectFit: "cover", borderRadius: 12, border: "1px solid var(--gold)" }}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <Monogram name={b.nome} />
+                          )}
+                          <Typography variant="h6" component="h2" sx={{ fontWeight: 800, mt: 1.1, color: "var(--text)" }}>
+                            {b.nome}
+                          </Typography>
+                          <Box sx={{ mt: 1.5, display: "flex", justifyContent: "flex-end" }}>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={() => handleSelectBarber(b)}
+                              sx={{ bgcolor: "var(--primary)", "&:hover": { bgcolor: "#0a360d" }, fontWeight: 700 }}
+                            >
+                              Selecionar
+                            </Button>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+
+                <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-start" }}>
+                  <BackBtn onClick={() => setActiveStep(0)} />
+                </Box>
+              </>
+            )}
+          </Box>
+        )}
+
+        {/* ETAPA 2: HORÁRIOS + PAGAMENTO */}
+        {activeStep === 2 && (
+          <Box>
+            {loadingSlots ? (
+              <Box sx={{ display: "grid", placeItems: "center", py: 4 }}><CircularProgress /></Box>
+            ) : (
+              <>
+                <Typography variant="h6" sx={{ fontWeight: 800, mb: 1.25 }}>
+                  Escolha um horário — {selectedDateLabel}
+                </Typography>
+
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
+                  {availableSlots.length ? (
+                    availableSlots.map((slot) => (
+                      <Button
+                        key={slot}
+                        variant={selectedSlot === slot ? "contained" : "outlined"}
+                        size="small"
+                        onClick={() => setSelectedSlot(slot)}
+                        sx={{
+                          fontWeight: 700,
+                          ...(selectedSlot === slot
+                            ? { bgcolor: "var(--primary)", "&:hover": { bgcolor: "#0a360d" } }
+                            : { color: "var(--gold)", borderColor: "var(--gold)", "&:hover": { background: "rgba(198,161,91,0.12)", borderColor: "var(--gold)" } }),
+                        }}
+                      >
+                        {slot}
+                      </Button>
+                    ))
+                  ) : (
+                    <Alert severity="info">Sem horários disponíveis para esta data.</Alert>
+                  )}
+                </Box>
+
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.75 }}>Pagamento</Typography>
+                <FormControl>
+                  <RadioGroup
+                    row
+                    value={payment}
+                    onChange={(e) => setPayment(e.target.value as BookingPayload["formaPagamento"])}
+                  >
+                    <FormControlLabel value="LOJA" control={<Radio />} label="Na loja" />
+                    <FormControlLabel value="CARTAO" control={<Radio />} label="Cartão" />
+                    <FormControlLabel value="DINHEIRO" control={<Radio />} label="Dinheiro" />
+                  </RadioGroup>
+                </FormControl>
+
+                <Box sx={{ mt: 2, display: "flex", gap: 1, justifyContent: "space-between" }}>
+                  <BackBtn onClick={() => setActiveStep(1)} />
+                  <Button
+                    variant="contained"
+                    onClick={handleConfirm}
+                    disabled={!canConfirm}
+                    sx={{ bgcolor: "var(--primary)", "&:hover": { bgcolor: "#0a360d" }, fontWeight: 800 }}
+                  >
+                    Confirmar Agendamento
+                  </Button>
+                </Box>
+              </>
             )}
           </Box>
         )}
@@ -248,6 +408,6 @@ export default function BookingSection({ selectedDateIso }: { selectedDateIso: s
           </Alert>
         </Snackbar>
       </Container>
-    </Box>
+    </Wrapper>
   );
 }
